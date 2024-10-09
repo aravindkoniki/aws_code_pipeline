@@ -3,8 +3,8 @@ data "aws_region" current {}
 data "aws_partition" current {}
 
 data "aws_codestarconnections_connection" "connection" {
-  #arn = "arn:aws:codeconnections:eu-west-1:947500280148:connection/1cdf789f-509e-44a5-bf5d-ea29d839a59d" # personal aws account
-  arn = "arn:aws:codeconnections:eu-central-1:416557291090:connection/b5c3e99d-2931-4631-bdcf-c6557b989b78" #pt-bl-test
+  arn = "arn:aws:codeconnections:eu-west-1:947500280148:connection/1cdf789f-509e-44a5-bf5d-ea29d839a59d" # personal aws account
+  #arn = "arn:aws:codeconnections:eu-central-1:416557291090:connection/b5c3e99d-2931-4631-bdcf-c6557b989b78" #pt-bl-test
 }
 
 # KMS
@@ -108,6 +108,7 @@ data "aws_iam_policy_document" "code_pipeline_build_assume_role_policy" {
   }
 }
 
+
 # codebuild and codepipeline policy 
 data "aws_iam_policy_document" "code_pipeline_build_policy" {
   statement {
@@ -120,10 +121,7 @@ data "aws_iam_policy_document" "code_pipeline_build_policy" {
       "s3:ListBucket",
       "s3:ListBuckets"
     ]
-    resources = [
-      "${aws_s3_bucket.codepipeline_bucket.arn}",
-      "${aws_s3_bucket.codepipeline_bucket.arn}/*"
-    ]
+    resources = local.s3_buckets
   }
 
   statement {
@@ -131,10 +129,7 @@ data "aws_iam_policy_document" "code_pipeline_build_policy" {
     actions = [
       "s3:GetBucketVersioning"
     ]
-    resources = [
-      "${aws_s3_bucket.codepipeline_bucket.arn}",
-      "${aws_s3_bucket.codepipeline_bucket.arn}/*"
-    ]
+    resources = local.s3_buckets
   }
 
   statement {
@@ -194,5 +189,23 @@ data "aws_iam_policy_document" "code_pipeline_build_policy" {
     resources = [
       data.aws_codestarconnections_connection.connection.arn
     ]
+  }
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateRole",
+      "iam:PutRolePolicy",
+      "iam:AttachRolePolicy",
+      "iam:UpdateRole",
+      "iam:DeleteRole",
+      "iam:CreatePolicy",
+      "iam:PutPolicy",
+      "iam:DeletePolicy",
+      "iam:AttachPolicy",
+      "iam:DetachRolePolicy",
+    ]
+
+    resources = ["*"]
   }
 }
