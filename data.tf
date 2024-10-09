@@ -121,7 +121,10 @@ data "aws_iam_policy_document" "code_pipeline_build_policy" {
       "s3:ListBucket",
       "s3:ListBuckets"
     ]
-    resources = local.s3_buckets
+    resources = [
+      "${aws_s3_bucket.codepipeline_bucket.arn}",
+      "${aws_s3_bucket.codepipeline_bucket.arn}/*"
+    ]
   }
 
   statement {
@@ -129,7 +132,10 @@ data "aws_iam_policy_document" "code_pipeline_build_policy" {
     actions = [
       "s3:GetBucketVersioning"
     ]
-    resources = local.s3_buckets
+    resources = [
+      "${aws_s3_bucket.codepipeline_bucket.arn}",
+      "${aws_s3_bucket.codepipeline_bucket.arn}/*"
+    ]
   }
 
   statement {
@@ -190,22 +196,164 @@ data "aws_iam_policy_document" "code_pipeline_build_policy" {
       data.aws_codestarconnections_connection.connection.arn
     ]
   }
+
+  # for deploying Infrastructure on code
   statement {
     effect = "Allow"
 
     actions = [
+      "iam:ListAttachedRolePolicies",
+      "iam:ListRolePolicies",
+      "iam:ListRoles",
+      "iam:ListRoleTags",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
       "iam:CreateRole",
-      "iam:PutRolePolicy",
-      "iam:AttachRolePolicy",
-      "iam:UpdateRole",
       "iam:DeleteRole",
-      "iam:CreatePolicy",
-      "iam:PutPolicy",
-      "iam:DeletePolicy",
-      "iam:AttachPolicy",
+      "iam:UpdateRole",
+      "iam:UpdateRoleDescription",
+      "iam:AttachRolePolicy",
+      "iam:DeleteRolePolicy",
       "iam:DetachRolePolicy",
+      "iam:DeleteRolePermissionsBoundary",
+      "iam:PutRolePermissionsBoundary",
+      "iam:PutRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:PassRole",
+      "iam:CreatePolicy",
+      "iam:CreatePolicyVersion",
+      "iam:DeletePolicy",
+      "iam:TagPolicy",
+      "iam:UntagPolicy",
+      "iam:ListPolicyTags",
+      "iam:ListPolicyVersions",
+      "iam:ListAttachedGroupPolicies",
+      "iam:ListPolicies",
+      "iam:ListInstanceProfilesForRole"
     ]
 
     resources = ["*"]
+  }
+  # for terraform state access
+  statement {
+    actions = ["s3:ListBucket"]
+    effect  = "Allow"
+
+    resources = ["arn:aws:s3:::aravindkoniki-tfstate-28092024"]
+  }
+  # for terraform state access
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    effect = "Allow"
+
+    resources = ["arn:aws:s3:::aravindkoniki-tfstate-28092024/*"]
+  }
+  # for terraform state access
+  statement {
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem"
+    ]
+    effect = "Allow"
+
+    resources = ["arn:aws:dynamodb:eu-west-1:947500280148:table/terraformstate-locks-tfstate-05082023"]
+  }
+
+
+  # cross account IAM Role
+}
+
+# for deploying Infrastructure on code
+data "aws_iam_policy_document" "code_pipeline_build_deployment_policy" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "iam:ListAttachedRolePolicies",
+      "iam:ListRolePolicies",
+      "iam:ListRoles",
+      "iam:ListRoleTags",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:UpdateRole",
+      "iam:UpdateRoleDescription",
+      "iam:AttachRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:DeleteRolePermissionsBoundary",
+      "iam:PutRolePermissionsBoundary",
+      "iam:PutRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:PassRole",
+      "iam:CreatePolicy",
+      "iam:CreatePolicyVersion",
+      "iam:DeletePolicy",
+      "iam:TagPolicy",
+      "iam:UntagPolicy",
+      "iam:ListPolicyTags",
+      "iam:ListPolicyVersions",
+      "iam:ListAttachedGroupPolicies",
+      "iam:ListPolicies",
+      "iam:ListInstanceProfilesForRole"
+    ]
+
+    resources = ["*"]
+  }
+  # for terraform state access
+  statement {
+    actions = ["s3:ListBucket"]
+    effect  = "Allow"
+
+    resources = ["arn:aws:s3:::aravindkoniki-tfstate-28092024"]
+  }
+  # for terraform state access
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    effect = "Allow"
+
+    resources = ["arn:aws:s3:::aravindkoniki-tfstate-28092024/*"]
+  }
+  # for terraform state access
+  statement {
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem"
+    ]
+    effect = "Allow"
+
+    resources = ["arn:aws:dynamodb:eu-west-1:947500280148:table/terraformstate-locks-tfstate-05082023"]
+  }
+}
+
+# cross account
+data "aws_iam_policy_document" "cross_role_policy_dev_account" {
+  statement {
+    effect    = "Allow"
+    actions   = ["sts:AssumeRole"]
+    resources = ["arn:aws:iam::767847069565:role/code-pipeline-dev-account-role"] # create this IAM Role dev account
+
+    condition {
+      test     = "StringEquals"
+      variable = "sts:ExternalId"
+      values   = ["cross_account_codepipeline"]
+    }
   }
 }

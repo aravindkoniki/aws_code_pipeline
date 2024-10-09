@@ -26,6 +26,7 @@ resource "aws_iam_role" "codepipeline_build_role" {
   tags               = var.tags
 }
 
+# code build policy
 resource "aws_iam_policy" "code_pipeline_build_policy" {
   name        = "${var.code_pipeline_build_role_name}-policy"
   description = "Policy to allow codepipeline to execute"
@@ -36,6 +37,31 @@ resource "aws_iam_role_policy_attachment" "codepipeline_role_attach" {
   role       = aws_iam_role.codepipeline_build_role.name
   policy_arn = aws_iam_policy.code_pipeline_build_policy.arn
 }
+
+# code build deployment policy
+resource "aws_iam_policy" "code_pipeline_deployment_policy" {
+  name        = "${var.code_pipeline_build_role_name}-deployment-policy"
+  description = "Policy to allow codepipeline deployment policy to execute"
+  policy      = data.aws_iam_policy_document.code_pipeline_build_deployment_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "codepipeline_deployment_role_attach" {
+  role       = aws_iam_role.codepipeline_build_role.name
+  policy_arn = aws_iam_policy.code_pipeline_deployment_policy.arn
+}
+
+# code build assume role policy
+resource "aws_iam_policy" "code_pipeline_dev_deployment_policy" {
+  name        = "${var.code_pipeline_build_role_name}-dev-deployment-policy"
+  description = "Policy to allow codepipeline to deploy into dev account"
+  policy      = data.aws_iam_policy_document.cross_role_policy_dev_account.json
+}
+
+resource "aws_iam_role_policy_attachment" "codepipeline_dev_deployment_role_attach" {
+  role       = aws_iam_role.codepipeline_build_role.name
+  policy_arn = aws_iam_policy.code_pipeline_dev_deployment_policy.arn
+}
+
 
 # code build
 module "codebuild" {
